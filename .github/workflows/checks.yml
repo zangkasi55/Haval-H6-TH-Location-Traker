@@ -1,0 +1,46 @@
+name: Checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: python -m pip install -r requirements-dev.txt
+      - run: npm ci
+      - run: python -m pytest -q
+      - run: python -m ruff check custom_components tests scripts
+      - run: python -m mypy custom_components/haval_h6_th_location_tracker
+      - run: npm test
+      - run: python scripts/check_public_tree.py
+      - run: python scripts/build_release.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installable-tracker
+          path: dist/
+          if-no-files-found: error
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build:map
+      - run: npm run test:browser

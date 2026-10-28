@@ -1,0 +1,12 @@
+{
+  "domain": "haval_h6_th_location_tracker",
+  "name": "Haval H6 TH Location Traker",
+  "codeowners": ["@zangkasi55"],
+  "config_flow": true,
+  "dependencies": ["http", "websocket_api"],
+  "documentation": "https://github.com/zangkasi55/Haval-H6-TH-Location-Traker",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/zangkasi55/Haval-H6-TH-Location-Traker/issues",
+  "version": "1.0.0"
+}

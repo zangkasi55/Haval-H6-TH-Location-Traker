@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Synthetic Haval journey illustrations</title>
+<style>
+body{margin:0;background:#edf3f8;color:#17314d;font:16px/1.5 system-ui,Segoe UI,sans-serif}
+.banner{background:#17314d;color:white;padding:16px 28px;font-size:13px;font-weight:650;letter-spacing:.04em}
+main{max-width:1120px;margin:24px auto;padding:0 20px}
+h1{font-size:28px;margin:0 0 6px}p{color:#587087;margin:0 0 18px}
+.form{margin:32px auto;max-width:620px;background:white;border-radius:20px;box-shadow:0 10px 40px #17314d12;padding:30px}
+.tag{font-size:12px;background:#dcecff;display:inline-block;padding:5px 10px;border-radius:20px;margin-bottom:16px}
+.field{border:1px solid #c2d2df;border-radius:10px;padding:14px 16px;margin:24px 0}
+.field small{display:block;color:#63788c;margin-bottom:5px}.check{padding:14px 0;color:#17314d}
+.button{margin-top:24px;text-align:right}.button span{display:inline-block;padding:10px 22px;background:#087ada;border-radius:10px;color:white}
+.note{margin-top:22px;font-size:13px;padding:16px;background:#eff6fc;border-radius:10px}
+canvas{display:block;margin:30px auto}
+</style>
+<div class="banner">SYNTHETIC DEMONSTRATION - FICTIONAL DATA AND MAP GEOMETRY - NO OWNER ACCOUNT OR JOURNEY</div>
+<main id="content"></main>
+<script type="module">
+import "/custom_components/haval_h6_th_location_tracker/frontend/haval-journey-card.js";
+const mode=new URL(location.href).searchParams.get("mode") || "journeys";
+const main=document.querySelector("main");
+if(mode==="setup"){
+  main.innerHTML=`<h1>Connect an existing GWM vehicle</h1><p>Setup illustration, not an actual Home Assistant account screen.</p>
+    <section class="form"><span class="tag">READ-ONLY COMPANION</span><h2>Haval H6 TH Location Traker</h2>
+    <div class="field"><small>Existing GWM vehicle</small>Synthetic Haval H6 PHEV</div>
+    <div class="check">[x] Record private observations (seven rolling days only)</div>
+    <div class="note">No password, PIN, token or certificate is requested.<br>Choose a vehicle already configured in GWM Thailand Connect.</div>
+    <div class="button"><span>Submit</span></div></section>`;
+}else if(mode==="icon"){
+  main.innerHTML='<canvas id="icon" width="256" height="256"></canvas>';
+  const c=document.querySelector("canvas").getContext("2d");
+  c.fillStyle="#0a648e";c.fillRect(0,0,256,256);c.strokeStyle="#c6efff";c.lineWidth=11;c.lineCap="round";
+  c.beginPath();c.moveTo(46,195);c.bezierCurveTo(76,155,128,220,170,170);c.stroke();
+  c.fillStyle="white";c.beginPath();c.moveTo(128,179);c.bezierCurveTo(91,140,75,111,75,85);c.arc(128,85,53,Math.PI,0);c.bezierCurveTo(181,111,165,140,128,179);c.fill();
+  c.fillStyle="#0a648e";c.beginPath();c.arc(128,85,22,0,Math.PI*2);c.fill();
+}else{
+  main.innerHTML=`<h1>Haval journeys</h1><p>Fictional example. Current status and sampled seven-day observations.</p>`;
+  const fixture=await (await fetch("./journey-fixture.json")).json();
+  if(fixture.synthetic!==true)throw new Error("Only an explicitly synthetic fixture may be rendered");
+  const offset=Date.now()-1000-Date.parse(fixture.current.reported_at);
+  const shift=value=>{
+    if(typeof value==="string" && /^\d{4}-\d\d-\d\dT/.test(value) && Number.isFinite(Date.parse(value)))return new Date(Date.parse(value)+offset).toISOString();
+    if(Array.isArray(value))return value.map(shift);
+    if(value && typeof value==="object")return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,shift(item)]));
+    return value;
+  };
+  const history=shift(fixture);
+  if(mode==="no-gps"){
+    history.current={availability:"stale_sample",position:null};
+    history.stops=[];history.segments=[];history.doors=[];history.sample_count=0;
+  }
+  const adapter={connected:true,callWS:async request=>{
+    if(request.type==="config/entity_registry/list")return [{platform:"haval_h6_th_location_tracker",device_id:"synthetic-tracker-device"}];
+    if(request.type==="haval_h6_th_location_tracker/journeys")return structuredClone(history);
+    throw new Error("The documentation demo refuses writes and unknown requests");
+  }};
+  const card=document.createElement("haval-journey-card");
+  card.setConfig({type:"custom:haval-journey-card",map_archive:"/local/gwm-maps/test.pmtiles"});
+  main.append(card);card.hass=adapter;
+}
+document.body.dataset.ready="true";
+</script>
+</html>

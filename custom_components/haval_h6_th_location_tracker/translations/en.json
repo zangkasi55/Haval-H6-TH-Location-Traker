@@ -1,0 +1,42 @@
+{
+  "title": "Haval H6 TH Location Traker",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Use an existing GWM vehicle",
+        "description": "Select your already-configured Thailand GWM vehicle. This read-only companion does not request passwords, tokens, certificates or a vehicle PIN. Recording is optional and limited to seven rolling days.",
+        "data": {
+          "source_device_id": "Existing GWM vehicle",
+          "record_journeys": "Record private observations (seven rolling days only)"
+        }
+      }
+    },
+    "error": {"source_not_supported": "Select one Thailand vehicle from GWM Thailand Connect or a compatible gwm_ora adapter."},
+    "abort": {
+      "source_missing": "Set up GWM Thailand Connect first. This companion does not sign in to the vehicle cloud.",
+      "already_configured": "A tracker for this source vehicle is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Private journey observations",
+        "description": "Retention is always seven rolling days. Disabling recording hides history and stops new observations; existing samples still expire. Use the card's confirmed deletion to erase them sooner.",
+        "data": {"record_journeys": "Record private observations (seven rolling days only)"}
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "journey_status": {
+        "name": "Journey status",
+        "state": {
+          "recording": "Recording",
+          "recording_off": "Recording off",
+          "source_unavailable": "Source unavailable",
+          "history_storage_error": "History storage error"
+        }
+      }
+    }
+  }
+}
