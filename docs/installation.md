@@ -64,7 +64,7 @@ do not repurpose its private history binding.
 
 In Settings -> Dashboards -> menu -> **Resources**, add:
 
-- URL: `/haval_h6_th_location_tracker/frontend/haval-journey-card.js?v=1.0.0`
+- URL: `/haval_h6_th_location_tracker/frontend/haval-journey-card.js?v=1.0.1`
 - Type: **JavaScript Module**
 
 Enable Advanced Mode in your HA profile if Resources is not visible.

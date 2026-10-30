@@ -13,7 +13,7 @@ globalThis.HTMLElement=class {
   }
 };
 globalThis.customElements={get:key=>registered.get(key),define:(key,value)=>registered.set(key,value)};
-const {validPosition,freshCurrent,localTileTemplate,localMapArchive,elapsed}=
+const {validPosition,freshCurrent,localTileTemplate,localMapArchive,mapLanguage,elapsed}=
   await import("../../custom_components/haval_h6_th_location_tracker/frontend/haval-journey-card.js");
 const now=Date.now();
 const current=()=>({
@@ -33,6 +33,17 @@ test("map sources must be local and never send a vehicle viewport to an external
   }
 });
 
+test("map labels prefer Thai by default and reject unsupported language settings",()=>{
+  assert.equal(mapLanguage(),"th");
+  assert.equal(mapLanguage("th"),"th");
+  assert.equal(mapLanguage("en"),"en");
+  for(const value of ["",null,1,"th-TH","https://example.invalid"])assert.throws(()=>mapLanguage(value));
+  const Card=registered.get("haval-journey-card"),card=new Card();
+  card.setConfig({type:"custom:haval-journey-card",map_language:"en"});
+  assert.equal(card._mapLanguage,"en");
+  card.setConfig({type:"custom:haval-journey-card"});
+  assert.equal(card._mapLanguage,"th");
+});
 test("only a recent valid manufacturer fix becomes a car marker",()=>{
   assert.equal(freshCurrent(current(),now).availability,"available");
   for(const patch of [

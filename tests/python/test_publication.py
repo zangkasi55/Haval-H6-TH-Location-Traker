@@ -10,9 +10,9 @@ DOMAIN = "haval_h6_th_location_tracker"
 def test_manifest_hacs_versions_and_translation_are_consistent():
     component = ROOT / "custom_components" / DOMAIN
     manifest = json.loads((component / "manifest.json").read_text())
-    assert manifest["domain"] == DOMAIN and manifest["version"] == "1.0.0"
+    assert manifest["domain"] == DOMAIN
     assert f'VERSION = "{manifest["version"]}"' in (component / "const.py").read_text()
-    assert "haval-journey-card.js?v=1.0.0" in (ROOT / "docs" / "installation.md").read_text()
+    assert f"haval-journey-card.js?v={manifest['version']}" in (ROOT / "docs" / "installation.md").read_text()
     assert json.loads((component / "strings.json").read_text()) == json.loads(
         (component / "translations" / "en.json").read_text(),
     )

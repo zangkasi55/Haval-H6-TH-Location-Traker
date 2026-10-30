@@ -95,6 +95,14 @@ async function withPage(callback,scenario="ready"){
   page.on("pageerror",error=>errors.push(error.message));
   page.on("response",response=>{if(response.url().endsWith("/local/test.pmtiles"))ranges.push(response.status());});
   await page.addInitScript(value=>{window.__scenario=value;},scenario);
+  await page.addInitScript(()=>{
+    window.__mapLabels=[];
+    const draw=CanvasRenderingContext2D.prototype.fillText;
+    CanvasRenderingContext2D.prototype.fillText=function(text,...args){
+      window.__mapLabels.push(String(text));
+      return draw.call(this,text,...args);
+    };
+  });
   try{
     await callback(page,{blocked,errors,ranges});
     assert.deepEqual(blocked,[],"Map must not request third-party data or a CDN");
@@ -107,6 +115,25 @@ async function ready(page){
 }
 async function marker(page){
   await page.locator("haval-journey-card .car-marker").waitFor();
+}
+
+async function drawnLabels(page,expected){
+  try{
+    await page.waitForFunction(names=>names.every(text=>window.__mapLabels.includes(text)),expected,{timeout:10000});
+  }catch(error){
+    const observed=await page.evaluate(()=>[...new Set(window.__mapLabels)]);
+    throw new Error(`Expected map labels ${JSON.stringify(expected)}, drawn ${JSON.stringify(observed)}`,{cause:error});
+  }
+}
+
+async function focusFixtureHospital(page){
+  await page.evaluate(()=>{
+    const {L}=window.__card._runtime;
+    const position=L.CRS.EPSG3857.pointToLatLng(L.point(
+      (6383+2200/4096)*256,(3779+2700/4096)*256,
+    ),13);
+    window.__card._map.setView(position,16,{animate:false});
+  });
 }
 
 test("real Leaflet renders a tiny local synthetic vector map with compact current status and attribution",async()=>{
@@ -125,6 +152,38 @@ test("real Leaflet renders a tiny local synthetic vector map with compact curren
   });
 });
 
+test("local vector tiles draw Thai neighbourhood and place names with local and English fallbacks",async()=>{
+  await withPage(async page=>{
+    await ready(page);await marker(page);
+    await page.evaluate(()=>window.__card._map.setZoom(14,{animate:false}));
+    await drawnLabels(page,[
+      "ย่านตัวอย่าง","English Only","Local Park",
+    ]);
+    await focusFixtureHospital(page);
+    await drawnLabels(page,["โรงพยาบาลตัวอย่าง"]);
+    assert.equal(await page.evaluate(()=>window.__mapLabels.includes("Demo District")),false);
+    assert.equal(await page.evaluate(()=>window.__card._baseLayer.options.lang),"th");
+  });
+});
+
+test("changing map language rebuilds labels without changing the displayed vehicle or requesting cloud data",async()=>{
+  await withPage(async page=>{
+    await ready(page);await marker(page);
+    const calls=await page.evaluate(()=>window.__calls.length);
+    await page.evaluate(()=>{
+      window.__previousMap=window.__card._map;window.__mapLabels=[];
+      window.__card.setConfig({type:"custom:haval-journey-card",map_archive:"/local/test.pmtiles",map_language:"en"});
+    });
+    await page.waitForFunction(()=>window.__card._map && window.__card._map!==window.__previousMap);
+    await page.evaluate(()=>window.__card._map.setZoom(14,{animate:false}));
+    await drawnLabels(page,["Demo District"]);
+    await focusFixtureHospital(page);
+    await drawnLabels(page,["Demo Hospital"]);
+    assert.equal(await page.evaluate(()=>window.__card._baseLayer.options.lang),"en");
+    assert.equal(await page.evaluate(()=>window.__calls.length),calls);
+    assert.equal(await page.locator("haval-journey-card .car-marker").count(),1);
+  });
+});
 test("missing, stale, future, expired and zero fixes stay blank with no default city or tile downloads",async()=>{
   for(const scenario of ["missing","stale","future","expired","zero"]){
     await withPage(async(page,{ranges})=>{

@@ -18,7 +18,7 @@ function geometry(points,closed=false){
   let x=0,y=0;
   const commands=[9,zigzag(points[0][0]),zigzag(points[0][1])];
   [x,y]=points[0];
-  commands.push((points.length-1)*8+2);
+  if(points.length>1)commands.push((points.length-1)*8+2);
   for(const [nextX,nextY] of points.slice(1)){
     commands.push(zigzag(nextX-x),zigzag(nextY-y));x=nextX;y=nextY;
   }
@@ -42,7 +42,8 @@ function layer(name,features){
   });
   return message(3,Buffer.concat([
     text(1,name),...records,...keys.map(value=>text(3,value)),
-    ...values.map(value=>message(4,text(1,value))),integer(5,4096),integer(15,2),
+    ...values.map(value=>message(4,typeof value==="number"?integer(4,value):text(1,value))),
+    integer(5,4096),integer(15,2),
   ]));
 }
 
@@ -62,13 +63,27 @@ export function syntheticMapArchive(){
         points:[[x,0],[x,4096]],
       })),
     ]),
+    layer("places",[
+      {type:1,properties:{kind:"neighbourhood",name:"Demo District","name:th":"ย่านตัวอย่าง","name:en":"Demo District",min_zoom:11},
+        points:[[1200,1200]]},
+      {type:1,properties:{kind:"suburb","name:en":"English Only",min_zoom:11},
+        points:[[3200,1200]]},
+    ]),
+    layer("pois",[
+      {type:1,properties:{kind:"hospital",name:"Demo Hospital","name:th":"โรงพยาบาลตัวอย่าง","name:en":"Demo Hospital",min_zoom:13},
+        points:[[2200,2700]]},
+      {type:1,properties:{kind:"park",name:"Local Park",min_zoom:13},
+        points:[[900,3200]]},
+    ]),
   ]);
   const maxZoom=13,addressed=(4**(maxZoom+1)-1)/3;
   const directory=Buffer.concat([varint(1),varint(0),varint(addressed),varint(tile.length),varint(1)]);
   const metadata=Buffer.from(JSON.stringify({
     name:"Synthetic map fixture",description:"Generated fictional land and roads, not OpenStreetMap or owner data",
     synthetic:true,attribution:"Synthetic fixture — no real geographic data",
-    vector_layers:[{id:"landcover",fields:{kind:"String",name:"String"}},{id:"roads",fields:{kind:"String",name:"String"}}],
+    vector_layers:["landcover","roads","places","pois"].map(id=>({
+      id,fields:{kind:"String",name:"String","name:th":"String","name:en":"String",min_zoom:"Number"},
+    })),
   }),"utf8");
   const header=Buffer.alloc(127);
   header.write("PMTiles",0,"ascii");header[7]=3;

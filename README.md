@@ -29,6 +29,8 @@ demo map is fictional test geometry, not a downloadable country basemap.*
 - Private, fixed **seven-day** history, pruned even when no new vehicle data arrives.
 - Explicit uncertainty: a stopped car is **not automatically parked**.
 - Locally bundled Leaflet/Protomaps renderer and a same-host map archive.
+- Thai-first city, road, neighbourhood and place-name labels where the local
+  archive includes them; optional English-first labels.
 - Administrator and selected-source-device permission checks for precise history.
 - Existing source integration and dashboard can stay installed; this uses its own
   integration domain and `custom:haval-journey-card` element.

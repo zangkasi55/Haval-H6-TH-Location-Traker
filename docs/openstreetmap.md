@@ -64,3 +64,27 @@ Bundled runtime notices are in the component's `frontend/vendor/LICENSES.txt`.
 The manual screenshots and browser tests instead use an in-memory tiny
 **fictional** PMTiles/MVT fixture. That is a renderer test, not a real Thailand
 country basemap or an owner's journey, and needs no external download.
+
+## Place names and language
+
+The local vector map shows town/city and road names, plus named neighbourhoods
+and points of interest included in the archive. Thai names are preferred by
+default; local names and then English are used when a translated name is absent.
+For English-first labels:
+
+```yaml
+type: custom:haval-journey-card
+map_language: en
+map_archive: /local/gwm-maps/thailand.pmtiles
+```
+
+Use `map_language: th` for Thai-first labels. These options apply to vector
+PMTiles only; labels in pre-rendered local XYZ images cannot be translated.
+Neighbourhood labels appear at zoom 11 and above; named places at zoom 13 and
+above, subject to the feature's own minimum zoom and label-collision avoidance.
+Zoom in for detail. The country extract ends at data zoom 13, so overzooming
+cannot add businesses or names that the archive does not contain.
+
+This is map labelling, not reverse geocoding: it does not attach an exact street
+address to the car or send coordinates to a search provider. The current-marker
+freshness/blank behavior is unchanged.
